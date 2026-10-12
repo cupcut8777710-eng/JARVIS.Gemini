@@ -8,23 +8,26 @@ if(!API_KEY){
   }
 }
 
-// ===== 2. ACTIVE GEMINI 3.x ENDPOINTS =====
-const MODELS = ["gemini-3.6-flash", "gemini-3.8-flash", "gemini-3.5-flash-lite"];
+// ===== 2. ACTIVE GEMINI MODEL ENDPOINTS =====
+const MODELS = ["gemini-2.5-flash", "gemini-3.5-flash-lite", "gemini-3.8-flash"];
 const chat = document.getElementById('chat');
 const input = document.getElementById('msg');
 const micBtn = document.getElementById('mic-btn');
 
-// ===== 3. GEMINI BRAIN =====
+// ===== 3. GEMINI BRAIN (Header Authentication Fix) =====
 async function callGemini(p){
-  if (!API_KEY) throw new Error("API Key missing. Clear storage & re-enter.");
+  if (!API_KEY) throw new Error("API Key missing. Clear site storage & re-enter.");
   
   let lastErr;
   for(const m of MODELS){
     try{
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(API_KEY)}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`;
       const res = await fetch(url, {
         method: "POST", 
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "x-goog-api-key": API_KEY  // Fixes OAuth/AQ credential error
+        },
         body: JSON.stringify({ contents: [{ parts: [{ text: p }] }] })
       });
       
@@ -32,7 +35,7 @@ async function callGemini(p){
       
       if (data.error) {
         lastErr = new Error(data.error.message || "API Error");
-        continue;
+        continue; // Try next model fallback
       }
       
       if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts[0]) {
@@ -115,5 +118,5 @@ function add(text, who) {
   d.innerText = text;
   chat.appendChild(d);
   chat.scrollTop = chat.scrollHeight;
-        }
-          
+                             }
+        
